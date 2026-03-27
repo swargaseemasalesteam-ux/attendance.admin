@@ -481,13 +481,17 @@ function renderCalendar(){
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('calTitle').textContent=`${months[calMonth]} ${calYear}`;
   const first=new Date(calYear,calMonth,1),last=new Date(calYear,calMonth+1,0);
-  const today=new Date();today.setHours(0,0,0,0);
+  // Use string for today to avoid timezone issues
+  const now=new Date();
+  const todayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   const cells=[];
-  for(let i=0;i<first.getDay();i++)cells.push({date:new Date(calYear,calMonth,-first.getDay()+i+1),current:false});
+  for(let i=0;i<first.getDay();i++){const d=new Date(calYear,calMonth,1-first.getDay()+i);cells.push({date:d,current:false});}
   for(let d=1;d<=last.getDate();d++)cells.push({date:new Date(calYear,calMonth,d),current:true});
   const rem=7-(cells.length%7||7);for(let i=1;i<=rem;i++)cells.push({date:new Date(calYear,calMonth+1,i),current:false});
   document.getElementById('calGrid').innerHTML=cells.map(({date,current})=>{
-    const key=date.toISOString().split('T')[0],isT=date.getTime()===today.getTime();
+    // Build key without timezone conversion
+    const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+    const isT=key===todayStr;
     const evs=evMap[key]||[];
     const evH=evs.slice(0,3).map(e=>`<div class="cal-event ${e.type==='Weekly Off'?'weekly':e.type==='Personal Leave'?'personal':'sick'}">${e.name.split(' ')[0]}</div>`).join('');
     const more=evs.length>3?`<div style="font-size:0.61rem;color:var(--muted)">+${evs.length-3} more</div>`:'';
@@ -533,7 +537,17 @@ function getTodayStr(){
   var day = String(d.getDate()).padStart(2,'0');
   return y+'-'+m+'-'+day;
 }
-function formatDate(s){if(!s)return'—';try{return new Date(s).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return s;}}
+function formatDate(s){
+  if(!s) return '—';
+  try {
+    var parts = String(s).split('T')[0].split('-');
+    if(parts.length===3){
+      var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return parts[2]+' '+months[parseInt(parts[1])-1]+' '+parts[0];
+    }
+    return s;
+  } catch(e){return s;}
+}
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=(type==='success'?'✅ ':'❌ ')+msg;t.className=`toast ${type} show`;setTimeout(()=>t.classList.remove('show'),3500);}
 </script>
 </body>
