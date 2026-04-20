@@ -144,6 +144,9 @@ tr:hover td{background:rgba(122,21,24,0.02);}
 .cal-event.sick{background:var(--danger-bg);color:var(--danger);}
 .cal-event.personal{background:var(--warning-bg);color:var(--warning);}
 .cal-event.emergency{background:var(--danger-bg);color:var(--danger);}
+.cal-event.holiday{background:rgba(122,21,24,0.15);color:var(--maroon);font-weight:700;}
+.cal-cell.holiday-day{background:#FFF0F0;border-color:#E8B4B4;}
+.cal-cell.holiday-day .cal-num{color:var(--maroon);font-weight:700;}
 .cal-legend{display:flex;gap:16px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border);}
 .cal-legend-item{display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--muted);}
 .cal-legend-dot{width:10px;height:10px;border-radius:3px;}
@@ -223,6 +226,9 @@ tr:hover td{background:rgba(122,21,24,0.02);}
     <div class="nav-item" onclick="showPage('employees',this)">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Employees
     </div>
+    <div class="nav-item" onclick="showPage('holidays',this)">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Holidays
+    </div>
     <div class="sidebar-bottom">
       <div class="user-chip">
         <div class="user-avatar-lg" id="sidebarAvatar">A</div>
@@ -259,6 +265,15 @@ tr:hover td{background:rgba(122,21,24,0.02);}
             <tbody id="pendingBody"></tbody>
           </table></div>
         </div>
+
+        <!-- TEAM SUMMARY -->
+        <div class="card">
+          <div class="card-header"><h3>Team-wise Attendance Today</h3></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Team</th><th>Total</th><th>Present</th><th>Absent</th><th>Attendance %</th></tr></thead>
+            <tbody id="teamSummaryBody"></tbody>
+          </table></div>
+        </div>
       </div>
 
       <!-- ATTENDANCE LOGS -->
@@ -275,6 +290,8 @@ tr:hover td{background:rgba(122,21,24,0.02);}
               </select>
               <input type="date" id="attDateFilter" class="filter-input" onchange="loadAllAttendance()"/>
               <button class="btn-sm" onclick="clearAttFilters()">Clear</button>
+              <input type="month" id="reportMonth" class="filter-input" value="2026-04" title="Select month for report"/>
+              <button class="btn-add" onclick="downloadReport()" style="padding:8px 14px;font-size:0.82rem;">⬇ Download Report</button>
             </div>
           </div>
           <div class="table-wrap"><table>
@@ -329,6 +346,7 @@ tr:hover td{background:rgba(122,21,24,0.02);}
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(122,21,24,0.25)"></div>Weekly Off</div>
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(192,57,43,0.25)"></div>Sick / Emergency</div>
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:rgba(184,134,11,0.25)"></div>Personal Leave</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#FFF0F0;border:1px solid #E8B4B4;"></div>Holiday</div>
           </div>
         </div>
       </div>
@@ -351,6 +369,35 @@ tr:hover td{background:rgba(122,21,24,0.02);}
           <div class="table-wrap"><table>
             <thead><tr><th>ID</th><th>Name</th><th>Team</th><th>Username</th><th>Role</th><th>Password Set</th></tr></thead>
             <tbody id="empBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- HOLIDAYS PAGE -->
+      <div class="page" id="page-holidays">
+        <div class="page-title">Holiday Management</div>
+        <div class="page-sub">Add and manage company holidays. Employees will see upcoming holidays on their dashboard.</div>
+        <div class="card" style="max-width:500px;overflow:visible;">
+          <div class="card-header"><h3>Add New Holiday</h3></div>
+          <div style="padding:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+              <div>
+                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Date</label>
+                <input type="date" id="hdDate" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;color-scheme:light;"/>
+              </div>
+              <div>
+                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Holiday Name</label>
+                <input type="text" id="hdName" placeholder="e.g. Diwali, Republic Day" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;"/>
+              </div>
+            </div>
+            <button onclick="addHoliday()" style="background:linear-gradient(135deg,var(--maroon),var(--maroon-light));border:none;border-radius:9px;padding:10px 24px;color:#fff;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;">+ Add Holiday</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>All Holidays</h3><button class="btn-sm" onclick="loadHolidays()">↻ Refresh</button></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Date</th><th>Holiday Name</th><th>Day</th><th>Action</th></tr></thead>
+            <tbody id="hdBody"></tbody>
           </table></div>
         </div>
       </div>
@@ -385,7 +432,7 @@ tr:hover td{background:rgba(122,21,24,0.02);}
 
 <script>
 const API_URL="https://script.google.com/macros/s/AKfycbzFDjgpt5S-fruEBflRHzVlbQqp-ADZ5_NoOk7YdRVlh5oRG8-oiL434JdtRAs032nn5g/exec"; // 🔴 Replace after deploying
-let adminUser=null,allEmployees=[],calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calEvents=[];
+let adminUser=null,allEmployees=[],calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calEvents=[],allHolidays=[];
 
 window.addEventListener('load',()=>{
   const s=localStorage.getItem('af_admin');
@@ -421,14 +468,16 @@ async function initApp(){
 
 async function loadDashboard(){
   const today=getTodayStr();
-  const[eR,aR,lR,cR]=await Promise.all([
+  const[eR,aR,lR,cR,hR]=await Promise.all([
     api({action:'getEmployees'}),
     api({action:'getAllAttendance',date:today}),
     api({action:'getAllLeaves',status:'Pending'}),
-    api({action:'getCalendar'})
+    api({action:'getCalendar'}),
+    api({action:'getHolidays'})
   ]);
   allEmployees=eR.success?eR.employees:[];
   calEvents=cR.success?cR.events:[];
+  allHolidays=(hR&&hR.success&&hR.holidays)?hR.holidays:[];
   document.getElementById('statTotal').textContent=allEmployees.filter(e=>e.role!=='admin').length;
   document.getElementById('statPresent').textContent=aR.success?aR.records.length:'—';
   const pending=lR.success?lR.records:[];
@@ -442,6 +491,8 @@ async function loadDashboard(){
   const recs=aR.success?aR.records:[];
   document.getElementById('todayAttBody').innerHTML=recs.length?recs.map(r=>`<tr><td><strong>${r.name}</strong></td><td>${r.team}</td><td>${r.loginTime||'—'}</td><td>${r.logoutTime||'—'}</td><td>${r.duration||'—'}</td><td>${r.logoutTime?`<span class="badge badge-complete" style="font-size:0.72rem"><span class="dot"></span>Complete</span>`:`<span class="badge badge-in" style="font-size:0.72rem"><span class="dot"></span>Active</span>`}</td></tr>`).join(''):'<tr><td colspan="6" class="empty-state">No attendance logged today yet</td></tr>';
   document.getElementById('pendingBody').innerHTML=pending.slice(0,6).map(r=>`<tr><td><strong>${r.name}</strong></td><td>${r.team}</td><td>${formatDate(r.date)}</td><td>${r.type}</td><td><button class="btn-approve" onclick="quickReview('${r.requestID}','Approved')">✓ Approve</button><button class="btn-reject" onclick="quickReview('${r.requestID}','Rejected')">✗ Reject</button></td></tr>`).join('')||'<tr><td colspan="5" class="empty-state">No pending requests 🎉</td></tr>';
+  // Team summary
+  renderTeamSummary(recs, allEmployees);
 }
 
 async function quickReview(id,status){
@@ -493,9 +544,13 @@ function renderCalendar(){
     const key=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
     const isT=key===todayStr;
     const evs=evMap[key]||[];
+    // Check if this date is a holiday
+    const holEntry=allHolidays.find(h=>String(h.date).split('T')[0]===key);
+    const holH=holEntry?`<div class="cal-event holiday">🎉 ${holEntry.name}</div>`:'';
     const evH=evs.slice(0,3).map(e=>`<div class="cal-event ${e.type==='Weekly Off'?'weekly':e.type==='Personal Leave'?'personal':'sick'}">${e.name.split(' ')[0]}</div>`).join('');
     const more=evs.length>3?`<div style="font-size:0.61rem;color:var(--muted)">+${evs.length-3} more</div>`:'';
-    return`<div class="cal-cell${isT?' today':''}${!current?' other-month':''}"><div class="cal-num">${date.getDate()}</div>${evH}${more}</div>`;
+    const holClass=holEntry?' holiday-day':'';
+    return`<div class="cal-cell${isT?' today':''}${!current?' other-month':''}${holClass}"><div class="cal-num">${date.getDate()}</div>${holH}${evH}${more}</div>`;
   }).join('');
 }
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
@@ -527,6 +582,125 @@ function showPage(id,el){
   if(id==='calendar'){buildCalDayNames();renderCalendar();}
   if(id==='employees')loadEmployees();
   if(id==='dashboard')loadDashboard();
+  if(id==='holidays')loadHolidays();
+}
+
+// ── TEAM SUMMARY ────────────────────────────────────────────
+function renderTeamSummary(todayRecs, allEmps) {
+  const teams = ['Tele Callers','Sales','Admin','Marketing','Registration','Accounts'];
+  const tb = document.getElementById('teamSummaryBody');
+  tb.innerHTML = teams.map(team => {
+    const total   = allEmps.filter(e => e.team === team && e.role !== 'admin').length;
+    const present = todayRecs.filter(r => r.team === team).length;
+    const absent  = Math.max(0, total - present);
+    const pct     = total > 0 ? Math.round((present/total)*100) : 0;
+    const barColor = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--gold)' : 'var(--danger)';
+    return `<tr>
+      <td><strong>${team}</strong></td>
+      <td style="text-align:center;">${total}</td>
+      <td style="text-align:center;color:var(--success);font-weight:600;">${present}</td>
+      <td style="text-align:center;color:var(--danger);">${absent}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;background:var(--border);border-radius:100px;height:8px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${barColor};border-radius:100px;transition:width 0.4s;"></div>
+          </div>
+          <span style="font-size:0.8rem;font-weight:600;color:${barColor};min-width:36px;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── HOLIDAYS ─────────────────────────────────────────────────
+async function loadHolidays() {
+  const r = await api({action:'getHolidays'});
+  const holidays = (r.success && r.holidays) ? r.holidays : [];
+  const tb = document.getElementById('hdBody');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  tb.innerHTML = holidays.length ? holidays.map(h => {
+    const parts = String(h.date).split('-');
+    const dayName = parts.length===3 ? days[new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])).getDay()] : '—';
+    return `<tr>
+      <td>${formatDate(h.date)}</td>
+      <td><strong>${h.name}</strong></td>
+      <td style="color:var(--muted);">${dayName}</td>
+      <td><button class="btn-reject" style="font-size:0.75rem;padding:4px 10px;" onclick="deleteHoliday('${h.id}')">Delete</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4" class="empty-state">No holidays added yet</td></tr>';
+}
+
+async function addHoliday() {
+  const date = document.getElementById('hdDate').value;
+  const name = document.getElementById('hdName').value.trim();
+  if (!date) { showToast('Please select a date','error'); return; }
+  if (!name) { showToast('Please enter holiday name','error'); return; }
+  const r = await api({action:'addHoliday', date, name});
+  showToast(r.message, r.success?'success':'error');
+  if (r.success) {
+    document.getElementById('hdDate').value = '';
+    document.getElementById('hdName').value = '';
+    loadHolidays();
+  }
+}
+
+async function deleteHoliday(id) {
+  if (!confirm('Delete this holiday?')) return;
+  const r = await api({action:'deleteHoliday', id});
+  showToast(r.message, r.success?'success':'error');
+  if (r.success) loadHolidays();
+}
+
+// ── DOWNLOAD REPORT ──────────────────────────────────────────
+async function downloadReport() {
+  const monthVal = document.getElementById('reportMonth').value;
+  if (!monthVal) { showToast('Please select a month first','error'); return; }
+  showToast('Generating report...','success');
+  const r = await api({action:'getAllAttendance', team:'All', date:''});
+  if (!r.success) { showToast('Failed to fetch data','error'); return; }
+  const [year, month] = monthVal.split('-');
+  const filtered = r.records.filter(rec => rec.date && rec.date.startsWith(monthVal));
+  if (filtered.length === 0) { showToast('No records found for this month','error'); return; }
+
+  // Group by employee
+  const empMap = {};
+  filtered.forEach(rec => {
+    if (!empMap[rec.employeeID]) {
+      empMap[rec.employeeID] = { name: rec.name, team: rec.team, records: [] };
+    }
+    empMap[rec.employeeID].records.push(rec);
+  });
+
+  // Build CSV
+  let csv = 'Employee ID,Name,Team,Date,Clock In,Clock Out,Duration\n';
+  Object.keys(empMap).sort().forEach(empID => {
+    const emp = empMap[empID];
+    emp.records.sort((a,b) => a.date.localeCompare(b.date));
+    emp.records.forEach(rec => {
+      csv += `"${empID}","${emp.name}","${emp.team}","${rec.date}","${rec.loginTime||''}","${rec.logoutTime||''}","${rec.duration||''}"\n`;
+    });
+  });
+
+  // Summary rows
+  csv += '\nSUMMARY\n';
+  csv += 'Employee ID,Name,Team,Total Days Present,Total Records\n';
+  Object.keys(empMap).sort().forEach(empID => {
+    const emp = empMap[empID];
+    csv += `"${empID}","${emp.name}","${emp.team}","${emp.records.length}","${emp.records.length}"\n`;
+  });
+
+  // Download
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  a.download = 'AttendFlow_Report_'+mNames[parseInt(month)-1]+'_'+year+'.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Report downloaded successfully!','success');
 }
 function logout(){localStorage.removeItem('af_admin');location.reload();}
 async function api(p){try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(p)});return await r.json();}catch(e){return{success:false,message:'Network error: '+e.message};}}
